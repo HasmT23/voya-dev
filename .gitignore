@@ -40,6 +40,9 @@ android/app/build/
 # Kubernetes / Helm
 *.kubeconfig
 
+# Nano Banana
+.claude/nano-banana-2-skill/
+
 # Misc
 coverage/
 .turbo/
