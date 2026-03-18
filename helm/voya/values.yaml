@@ -1,0 +1,80 @@
+# Default values for Voya Helm chart.
+
+replicaCount:
+  apiService: 2
+  registryService: 2
+  wsService: 2
+  agentService: 2
+
+image:
+  registry: ""
+  pullPolicy: IfNotPresent
+
+apiService:
+  port: 3000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+registryService:
+  port: 3001
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+wsService:
+  port: 3002
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+agentService:
+  port: 3003
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+postgresql:
+  enabled: true
+  auth:
+    username: voya
+    database: voya
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: api.voya.dev
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api-service
+    - host: ws.voya.dev
+      paths:
+        - path: /
+          pathType: Prefix
+          service: ws-service
+
+secrets:
+  jwtSecret: ""
+  anthropicApiKey: ""
+  googleClientId: ""
+  googleClientSecret: ""
+  stripeSecretKey: ""
+  stripeWebhookSecret: ""

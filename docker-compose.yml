@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: voya
+      POSTGRES_PASSWORD: voya_dev_password
+      POSTGRES_DB: voya
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voya"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  registry-service:
+    build: ./backend/registry-service
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      DATABASE_URL: postgresql://voya:voya_dev_password@postgres:5432/voya
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      DEVICE_TOKEN_SECRET: dev-token-secret-change-in-production
+      API_BASE_URL: http://localhost:3001
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api-service:
+    build: ./backend/api-service
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgresql://voya:voya_dev_password@postgres:5432/voya
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:-}
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ws-service:
+    build: ./backend/ws-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: "3002"
+      REGISTRY_URL: http://registry-service:3001
+      AGENT_URL: http://agent-service:3003
+
+  agent-service:
+    build: ./backend/agent-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: "3003"
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ALLOWED_ORIGINS: http://localhost:3000
+
+volumes:
+  postgres_data:

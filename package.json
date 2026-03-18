@@ -1,0 +1,21 @@
+{
+  "name": "voya-dev",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice-controlled remote desktop automation",
+  "workspaces": [
+    "backend/*",
+    "desktop-agent"
+  ],
+  "scripts": {
+    "dev:registry": "npm run dev --workspace=backend/registry-service",
+    "dev:api": "npm run dev --workspace=backend/api-service",
+    "dev:ws": "npm run dev --workspace=backend/ws-service",
+    "dev:agent": "npm run dev --workspace=backend/agent-service",
+    "dev:desktop": "npm run dev --workspace=desktop-agent",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "license": "MIT"
+}

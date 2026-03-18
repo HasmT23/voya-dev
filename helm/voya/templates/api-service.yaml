@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  labels:
+    app: voya
+    component: api-service
+spec:
+  replicas: {{ .Values.replicaCount.apiService }}
+  selector:
+    matchLabels:
+      app: voya
+      component: api-service
+  template:
+    metadata:
+      labels:
+        app: voya
+        component: api-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+        - name: api-service
+          image: "{{ .Values.image.registry }}/voya-api-service:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.apiService.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.apiService.port }}"
+            - name: NODE_ENV
+              value: "production"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: voya-secrets
+                  key: jwt-secret
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: voya-secrets
+                  key: google-client-id
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: voya-secrets
+                  key: database-url
+          resources:
+            {{- toYaml .Values.apiService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.apiService.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.apiService.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  selector:
+    app: voya
+    component: api-service
+  ports:
+    - port: {{ .Values.apiService.port }}
+      targetPort: {{ .Values.apiService.port }}

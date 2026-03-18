@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+  labels:
+    app: voya
+    component: agent-service
+spec:
+  replicas: {{ .Values.replicaCount.agentService }}
+  selector:
+    matchLabels:
+      app: voya
+      component: agent-service
+  template:
+    metadata:
+      labels:
+        app: voya
+        component: agent-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+        - name: agent-service
+          image: "{{ .Values.image.registry }}/voya-agent-service:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.agentService.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.agentService.port }}"
+            - name: NODE_ENV
+              value: "production"
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: voya-secrets
+                  key: anthropic-api-key
+          resources:
+            {{- toYaml .Values.agentService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.agentService.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+spec:
+  selector:
+    app: voya
+    component: agent-service
+  ports:
+    - port: {{ .Values.agentService.port }}
+      targetPort: {{ .Values.agentService.port }}

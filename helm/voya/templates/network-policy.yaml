@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: voya-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: voya
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # API and WS services accept traffic from ingress controller
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: 3000
+        - port: 3002
+    # Internal services accept traffic only from within voya
+    - from:
+        - podSelector:
+            matchLabels:
+              app: voya
+      ports:
+        - port: 3001
+        - port: 3003
+  egress:
+    # All pods can reach the internet (Claude API, Stripe, Google OAuth)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+    # All pods can reach each other
+    - to:
+        - podSelector:
+            matchLabels:
+              app: voya
