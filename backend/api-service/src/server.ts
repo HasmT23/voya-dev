@@ -31,15 +31,16 @@ export async function buildServer(db: PrismaClient) {
   registerUsageRoutes(app, db);
   registerBillingRoutes(app, db);
 
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);
-    if (error.statusCode === 429) {
+    const code = (error as Record<string, unknown>).statusCode as number | undefined;
+    if (code === 429) {
       return reply.code(429).send({ error: "Too many requests." });
     }
-    return reply.code(error.statusCode || 500).send({
+    return reply.code(code || 500).send({
       error: process.env.NODE_ENV === "production"
         ? "Internal server error"
-        : error.message,
+        : (error as Error).message,
     });
   });
 

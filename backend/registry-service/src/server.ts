@@ -27,38 +27,28 @@ export async function buildServer(db: PrismaClient) {
     timeWindow: "1 minute",
   });
 
-  // Stricter rate limit on pairing endpoints
-  app.register(async (scope) => {
-    await scope.register(rateLimit, {
-      max: 5,
-      timeWindow: "15 minutes",
-      keyGenerator: (request) => {
-        return request.ip;
-      },
-    });
-
-    // Health check
-    scope.get("/health", async () => ({ status: "ok", service: "registry" }));
-  });
+  // Health check (no auth required)
+  app.get("/health", async () => ({ status: "ok", service: "registry" }));
 
   // Device routes
   registerDeviceRoutes(app, db);
 
   // Global error handler
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);
+    const code = (error as Record<string, unknown>).statusCode as number | undefined;
 
-    if (error.statusCode === 429) {
+    if (code === 429) {
       return reply.code(429).send({
         error: "Too many requests. Please try again later.",
       });
     }
 
-    return reply.code(error.statusCode || 500).send({
+    return reply.code(code || 500).send({
       error:
         process.env.NODE_ENV === "production"
           ? "Internal server error"
-          : error.message,
+          : (error as Error).message,
     });
   });
 

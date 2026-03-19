@@ -8,14 +8,30 @@ datasource db {
 }
 
 model User {
+  id               String    @id @default(cuid())
+  googleId         String    @unique
+  email            String    @unique
+  name             String?
+  tier             Tier      @default(FREE)
+  stripeCustomerId String?   @unique
+  usage            Usage[]
+  devices          Device[]
+  pairingCodes     PairingRequest[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Usage {
   id            String    @id @default(cuid())
-  googleId      String    @unique
-  email         String    @unique
-  name          String?
-  devices       Device[]
-  pairingCodes  PairingRequest[]
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month         String    // "2026-03" format
+  commandCount  Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, month])
+  @@index([userId, month])
 }
 
 model Device {
@@ -47,6 +63,11 @@ model PairingRequest {
 
   @@index([codeHash])
   @@index([expiresAt])
+}
+
+enum Tier {
+  FREE
+  PRO
 }
 
 enum DeviceType {

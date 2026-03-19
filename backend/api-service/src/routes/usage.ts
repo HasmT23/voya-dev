@@ -9,13 +9,11 @@ export function registerUsageRoutes(
 ): void {
   const usage = new UsageService(db);
 
-  app.addHook("onRequest", requireAuth);
-
   /**
    * GET /usage
    * Get current usage stats for the authenticated user.
    */
-  app.get("/usage", async (request, reply) => {
+  app.get("/usage", { onRequest: requireAuth }, async (request, reply) => {
     const stats = await usage.getStats((request as any).userId);
     return reply.code(200).send(stats);
   });
@@ -24,7 +22,7 @@ export function registerUsageRoutes(
    * GET /usage/check
    * Quick check if user can execute a command.
    */
-  app.get("/usage/check", async (request, reply) => {
+  app.get("/usage/check", { onRequest: requireAuth }, async (request, reply) => {
     const result = await usage.checkLimit((request as any).userId);
     return reply.code(200).send(result);
   });

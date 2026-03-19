@@ -1,9 +1,7 @@
 import Stripe from "stripe";
 import type { PrismaClient } from "@prisma/client";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-01-27.acacia",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID || "";
 

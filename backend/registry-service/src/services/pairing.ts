@@ -3,7 +3,6 @@ import {
   generateDeviceToken,
   generatePairingCode,
   hashToken,
-  verifyTokenHash,
 } from "../utils/crypto.js";
 import { generateQRDataURL } from "../utils/qrcode.js";
 import type { InitiatePairingInput } from "../schemas/devices.js";

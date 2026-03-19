@@ -14,20 +14,11 @@ export function registerDeviceRoutes(
 ): void {
   const pairing = new PairingService(db);
 
-  // All routes require authentication except token verification
-  app.addHook("onRequest", async (request, reply) => {
-    // Token verify is used by internal services — authenticated by device token, not JWT
-    if (request.url === "/devices/verify" && request.method === "POST") {
-      return;
-    }
-    await requireAuth(request, reply);
-  });
-
   /**
    * POST /devices/pair/initiate
    * Desktop calls this to start pairing. Returns QR code data URL.
    */
-  app.post("/devices/pair/initiate", async (request, reply) => {
+  app.post("/devices/pair/initiate", { onRequest: requireAuth }, async (request, reply) => {
     const parsed = InitiatePairingSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -54,7 +45,7 @@ export function registerDeviceRoutes(
    * POST /devices/pair/confirm
    * Mobile calls this after scanning QR. Returns the device token (once).
    */
-  app.post("/devices/pair/confirm", async (request, reply) => {
+  app.post("/devices/pair/confirm", { onRequest: requireAuth }, async (request, reply) => {
     const parsed = ConfirmPairingSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -80,6 +71,7 @@ export function registerDeviceRoutes(
   /**
    * POST /devices/verify
    * Internal endpoint — other services verify device tokens here.
+   * No JWT auth required — authenticated by device token.
    */
   app.post("/devices/verify", async (request, reply) => {
     const parsed = VerifyTokenSchema.safeParse(request.body);
@@ -102,7 +94,7 @@ export function registerDeviceRoutes(
    * GET /devices
    * List all paired devices for the authenticated user.
    */
-  app.get("/devices", async (request, reply) => {
+  app.get("/devices", { onRequest: requireAuth }, async (request, reply) => {
     const devices = await pairing.listDevices((request as any).userId);
     return reply.code(200).send({ devices });
   });
@@ -113,6 +105,7 @@ export function registerDeviceRoutes(
    */
   app.delete<{ Params: { deviceId: string } }>(
     "/devices/:deviceId",
+    { onRequest: requireAuth },
     async (request, reply) => {
       try {
         const result = await pairing.removeDevice(

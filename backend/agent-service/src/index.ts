@@ -54,12 +54,13 @@ async function main() {
     }
   });
 
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);
-    return reply.code(error.statusCode || 500).send({
+    const code = (error as Record<string, unknown>).statusCode as number | undefined;
+    return reply.code(code || 500).send({
       error: process.env.NODE_ENV === "production"
         ? "Internal server error"
-        : error.message,
+        : (error as Error).message,
     });
   });
 

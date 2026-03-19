@@ -31,5 +31,6 @@ export async function requireAuth(
     (request as any).email = payload.email;
   } catch {
     reply.code(401).send({ error: "Invalid or expired token." });
+    return;
   }
 }
